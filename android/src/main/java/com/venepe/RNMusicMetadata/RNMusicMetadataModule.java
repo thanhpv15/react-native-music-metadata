@@ -27,35 +27,46 @@ public class RNMusicMetadataModule extends ReactContextBaseJavaModule {
     }
 
     private WritableMap getData(String path) {
-        Uri uri = Uri.parse(path);
-        MediaMetadataRetriever meta = new MediaMetadataRetriever();
-        meta.setDataSource(getReactApplicationContext(), uri);
-        String title = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
-        String artist = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-        String albumName = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-        String albumArtist = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
-        Double duration = Double.valueOf(meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)) / 1000.0;
+        try {
+            Uri uri = Uri.parse(path);
+            MediaMetadataRetriever meta = new MediaMetadataRetriever();
+            meta.setDataSource(getReactApplicationContext(), uri);
+            String title = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+            String artist = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+            String albumName = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+            String albumArtist = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
+            Double duration = Double.valueOf(meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)) / 1000.0;
 
-        // Creates the returnable objects for Javascript
-        WritableMap songMap = Arguments.createMap();
-        songMap.putString("title", title);
-        songMap.putString("artist", artist);
-        songMap.putString("albumName", albumName);
-        songMap.putString("albumArtist", albumArtist);
-        songMap.putDouble("duration", duration);
-        songMap.putString("uri", path);
+            // Creates the returnable objects for Javascript
+            WritableMap songMap = Arguments.createMap();
+            songMap.putString("title", title);
+            songMap.putString("artist", artist);
+            songMap.putString("albumName", albumName);
+            songMap.putString("albumArtist", albumArtist);
+            songMap.putDouble("duration", duration);
+            songMap.putString("uri", path);
 
-        return songMap;
+            return songMap;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @ReactMethod
     public void getMetadata(ReadableArray uris, Promise promise) {
         WritableArray songArray = Arguments.createArray();
-        for (int i = 0; i < uris.size(); i++) {
-            String uri = uris.getString(i);
-            WritableMap songMap = this.getData(uri);
-            songArray.pushMap(songMap);
+        try {
+            for (int i = 0; i < uris.size(); i++) {
+                String uri = uris.getString(i);
+                WritableMap songMap = this.getData(uri);
+                if (songMap == null) {
+                    continue;
+                }
+                songArray.pushMap(songMap);
+            }
+            promise.resolve(songArray);
+        } catch (Exception e) {
+            promise.resolve(songArray);
         }
-        promise.resolve(songArray);
     }
 }
